@@ -10,7 +10,7 @@ import LocationMap from "./location-map"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function TelemetryDashboard() {
-  const { telemetryData, telemetryHistory } = useTelemetryData()
+  const { telemetryData, telemetryHistory, isConnected } = useTelemetryData()
 
   // Helper function to calculate change between current and previous value
   const calculateChange = (currentValue: number | undefined, dataKey: keyof TelemetryData) => {
@@ -38,8 +38,8 @@ export default function TelemetryDashboard() {
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Solar Gators Telemetry</h1>
           <div className="flex items-center space-x-4">
             <div className="flex items-center">
-              <div className={`h-3 w-3 rounded-full mr-2 ${telemetryData ? "bg-green-500" : "bg-red-500"}`} />
-              <span className="text-sm font-medium">{telemetryData ? "Connected" : "Disconnected"}</span>
+              <div className={`h-3 w-3 rounded-full mr-2 ${isConnected ? "bg-green-500" : "bg-red-500"}`} />
+              <span className="text-sm font-medium">{isConnected ? "Connected" : "Not Connected"}</span>
             </div>
             {telemetryData && (
               <div className="text-sm text-muted-foreground">
@@ -100,6 +100,14 @@ export default function TelemetryDashboard() {
                 icon={<Power className="h-4 w-4" />}
                 change={calculateChange(telemetryData?.motorOutputPower, "motorOutputPower")}
                 dataKey="motorOutputPower"
+              />
+              <TelemetryCard
+                title="Motor Current"
+                value={telemetryData?.motorCurrent}
+                unit="A"
+                icon={<Power className="h-4 w-4" />}
+                change={calculateChange(telemetryData?.motorCurrent, "motorCurrent")}
+                dataKey="motorCurrent"
               />
 
               {/* Performance Metrics */}

@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useTelemetryData } from "@/hooks/use-telemetry"
-import { Battery, Cpu, Power, Radio, Satellite } from "lucide-react"
+import { Battery, Cpu, Power, Radio, LayoutDashboard } from "lucide-react"
 
 export default function BoardStatus() {
   const { telemetryData } = useTelemetryData()
@@ -33,10 +33,10 @@ export default function BoardStatus() {
       description: "Motor Control System"
     },
     {
-      name: "GPS",
-      connected: telemetryData?.gpsConnected ?? false,
-      icon: <Satellite className="h-4 w-4" />,
-      description: "Global Positioning System"
+      name: "Dashboard",
+      connected: telemetryData?.dashboardConnected ?? false,
+      icon: <LayoutDashboard className="h-4 w-4" />,
+      description: "Main Control Dashboard"
     }
   ]
 

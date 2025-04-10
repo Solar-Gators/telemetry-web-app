@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { broadcastTelemetryUpdate } from '../socket/route';
 
 // In-memory storage for the latest data
 let latestData: any = null;
@@ -16,6 +17,13 @@ export async function POST(request: Request) {
     };
     
     latestData = dataWithTimestamp;
+    
+    // Store the latest data globally
+    // @ts-ignore - Next.js global type issue
+    (global as any).latestData = latestData;
+    
+    // Broadcast the update to all connected clients via WebSocket
+    broadcastTelemetryUpdate(dataWithTimestamp);
     
     return NextResponse.json({ success: true });
   } catch (error: any) {

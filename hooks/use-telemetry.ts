@@ -1,85 +1,71 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { io, Socket } from 'socket.io-client'
 
 // Define the telemetry data interface
 export interface TelemetryData {
   timestamp: number
-  hvBatteryVoltage?: number
-  suppBatteryVoltage?: number
-  avgSpeed?: number
-  solarPowerIntake?: number
-  motorOutputPower?: number
-  netPower?: number
-  lowCellVoltage?: number
-  lowCellTemp?: number
-  highCellVoltage?: number
-  highCellTemp?: number
-  // Board status parameters
-  bmsConnected?: boolean
-  vcuConnected?: boolean
-  powerBoardConnected?: boolean
-  motorControllerConnected?: boolean
-  gpsConnected?: boolean
+  [key: string]: any
 }
 
 // Timeout duration in milliseconds (5 minutes)
 const DATA_TIMEOUT = 5 * 60 * 1000;
 
-// Custom hook to provide telemetry data
+// Custom hook for telemetry data
 export function useTelemetryData() {
   const [telemetryData, setTelemetryData] = useState<TelemetryData | null>(null)
   const [telemetryHistory, setTelemetryHistory] = useState<TelemetryData[]>([])
-  const [lastDataTimestamp, setLastDataTimestamp] = useState<number>(0)
+  const [isConnected, setIsConnected] = useState<boolean>(false)
+  const [socket, setSocket] = useState<Socket | null>(null)
 
   useEffect(() => {
-    // Function to fetch latest telemetry data
-    const fetchTelemetryData = async () => {
-      try {
-        const response = await fetch('/api/webhook')
-        if (!response.ok) {
-          throw new Error('Failed to fetch telemetry data')
-        }
-        const data = await response.json()
-        
-        if (data && Object.keys(data).length > 0) {
-          setTelemetryData(data)
-          setLastDataTimestamp(Date.now())
-          
-          // Add to history if it's a new entry
-          if (telemetryHistory.length === 0 || 
-              data.timestamp !== telemetryHistory[telemetryHistory.length - 1].timestamp) {
-            setTelemetryHistory(prev => [...prev, data].slice(-10)) // Keep last 10 entries
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching telemetry data:', error)
+    // Initialize Socket.IO connection
+    const newSocket = io('/', {
+      path: '/api/socket',
+      transports: ['websocket'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    })
+
+    // Set up connection event handlers
+    newSocket.on('connect', () => {
+      console.log('WebSocket connected successfully')
+      setIsConnected(true)
+    })
+
+    newSocket.on('disconnect', () => {
+      console.log('WebSocket disconnected')
+      setIsConnected(false)
+    })
+
+    newSocket.on('connect_error', (error) => {
+      console.error('WebSocket connection error:', error)
+    })
+
+    // Listen for telemetry updates
+    newSocket.on('telemetry-update', (data: TelemetryData) => {
+      console.log('Received telemetry update via WebSocket:', data)
+      setTelemetryData(data)
+      // Add to history if it's a new entry
+      if (telemetryHistory.length === 0 || 
+          data.timestamp !== telemetryHistory[telemetryHistory.length - 1].timestamp) {
+        setTelemetryHistory(prev => [...prev, data].slice(-10)) // Keep last 10 entries
       }
-    }
+    })
 
-    // Initial fetch
-    fetchTelemetryData()
+    setSocket(newSocket)
 
-    // Set up polling interval
-    const intervalId = setInterval(fetchTelemetryData, 1000) // Poll every 1 second
-
-    // Set up timeout check (every 10 seconds)
-    const timeoutCheckId = setInterval(() => {
-      const now = Date.now()
-      if (lastDataTimestamp > 0 && now - lastDataTimestamp > DATA_TIMEOUT) {
-        // Reset data if timeout exceeded
-        setTelemetryData(null)
-        console.log('Telemetry data timeout: No data received for 5 minutes')
-      }
-    }, 10000)
-
-    // Clean up intervals on unmount
+    // Cleanup on unmount
     return () => {
-      clearInterval(intervalId)
-      clearInterval(timeoutCheckId)
+      if (newSocket) {
+        console.log('Cleaning up WebSocket connection')
+        newSocket.disconnect()
+      }
     }
-  }, [lastDataTimestamp])
+  }, [telemetryHistory])
 
-  return { telemetryData, telemetryHistory }
+  return { telemetryData, telemetryHistory, isConnected }
 }
 

@@ -5,87 +5,80 @@ import { useEffect, useState } from "react"
 // Define the telemetry data interface
 export interface TelemetryData {
   timestamp: number
-  formattedTime: string
-  hvBatteryVoltage: number
-  suppBatteryVoltage: number
-  avgSpeed: number
-  solarPowerIntake: number
-  motorOutputPower: number // New field for motor output power
-  netPower: number // New field for net power (solar - motor)
-  lowCellVoltage: number
-  lowCellTemp: number
-  highCellVoltage: number
-  highCellTemp: number
+  hvBatteryVoltage?: number
+  suppBatteryVoltage?: number
+  avgSpeed?: number
+  solarPowerIntake?: number
+  motorOutputPower?: number
+  netPower?: number
+  lowCellVoltage?: number
+  lowCellTemp?: number
+  highCellVoltage?: number
+  highCellTemp?: number
+  // Board status parameters
+  bmsConnected?: boolean
+  vcuConnected?: boolean
+  powerBoardConnected?: boolean
+  motorControllerConnected?: boolean
+  gpsConnected?: boolean
 }
 
-// Function to generate random telemetry data
-function generateTelemetryData(): TelemetryData {
-  const now = Date.now()
-  const solarPower = 600 + Math.random() * 150 // 600-750W range
-  const motorPower = 400 + Math.random() * 200 // 400-600W range
-  const netPower = solarPower - motorPower // Calculate net power
-
-  return {
-    timestamp: now,
-    formattedTime: new Date(now).toLocaleTimeString(),
-    hvBatteryVoltage: 120 + Math.random() * 10,
-    suppBatteryVoltage: 12 + Math.random() * 2,
-    avgSpeed: 25 + Math.random() * 15,
-    solarPowerIntake: solarPower,
-    motorOutputPower: motorPower,
-    netPower: netPower,
-    lowCellVoltage: 3.2 + Math.random() * 0.3,
-    lowCellTemp: 25 + Math.random() * 5,
-    highCellVoltage: 4.0 + Math.random() * 0.2,
-    highCellTemp: 35 + Math.random() * 10,
-  }
-}
+// Timeout duration in milliseconds (5 minutes)
+const DATA_TIMEOUT = 5 * 60 * 1000;
 
 // Custom hook to provide telemetry data
 export function useTelemetryData() {
   const [telemetryData, setTelemetryData] = useState<TelemetryData | null>(null)
   const [telemetryHistory, setTelemetryHistory] = useState<TelemetryData[]>([])
+  const [lastDataTimestamp, setLastDataTimestamp] = useState<number>(0)
 
   useEffect(() => {
-    // Initialize with some historical data
-    const initialHistory: TelemetryData[] = []
-    const now = Date.now()
-
-    for (let i = 0; i < 20; i++) {
-      const pastTime = now - (20 - i) * 5000
-      const solarPower = 600 + Math.random() * 150
-      const motorPower = 400 + Math.random() * 200
-
-      initialHistory.push({
-        ...generateTelemetryData(),
-        timestamp: pastTime,
-        formattedTime: new Date(pastTime).toLocaleTimeString(),
-        solarPowerIntake: solarPower,
-        motorOutputPower: motorPower,
-        netPower: solarPower - motorPower,
-      })
+    // Function to fetch latest telemetry data
+    const fetchTelemetryData = async () => {
+      try {
+        const response = await fetch('/api/webhook')
+        if (!response.ok) {
+          throw new Error('Failed to fetch telemetry data')
+        }
+        const data = await response.json()
+        
+        if (data && Object.keys(data).length > 0) {
+          setTelemetryData(data)
+          setLastDataTimestamp(Date.now())
+          
+          // Add to history if it's a new entry
+          if (telemetryHistory.length === 0 || 
+              data.timestamp !== telemetryHistory[telemetryHistory.length - 1].timestamp) {
+            setTelemetryHistory(prev => [...prev, data].slice(-10)) // Keep last 10 entries
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching telemetry data:', error)
+      }
     }
 
-    setTelemetryHistory(initialHistory)
-    setTelemetryData(initialHistory[initialHistory.length - 1])
+    // Initial fetch
+    fetchTelemetryData()
 
-    // Set up interval to simulate real-time data
-    const interval = setInterval(() => {
-      const newData = generateTelemetryData()
+    // Set up polling interval
+    const intervalId = setInterval(fetchTelemetryData, 1000) // Poll every 1 second
 
-      setTelemetryData(newData)
-      setTelemetryHistory((prev) => {
-        const updated = [...prev, newData]
-        // Keep only the last 50 data points
-        if (updated.length > 50) {
-          return updated.slice(updated.length - 50)
-        }
-        return updated
-      })
-    }, 5000) // Update every 5 seconds
+    // Set up timeout check (every 10 seconds)
+    const timeoutCheckId = setInterval(() => {
+      const now = Date.now()
+      if (lastDataTimestamp > 0 && now - lastDataTimestamp > DATA_TIMEOUT) {
+        // Reset data if timeout exceeded
+        setTelemetryData(null)
+        console.log('Telemetry data timeout: No data received for 5 minutes')
+      }
+    }, 10000)
 
-    return () => clearInterval(interval)
-  }, [])
+    // Clean up intervals on unmount
+    return () => {
+      clearInterval(intervalId)
+      clearInterval(timeoutCheckId)
+    }
+  }, [lastDataTimestamp])
 
   return { telemetryData, telemetryHistory }
 }

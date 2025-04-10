@@ -2,14 +2,34 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Battery, Gauge, Thermometer, Zap, Power, Activity, MapPin } from "lucide-react"
+import { Battery, Gauge, Thermometer, Zap, Power, Activity, MapPin, AlertCircle } from "lucide-react"
 import TelemetryCard from "./telemetry-card"
-import { useTelemetryData } from "@/hooks/use-telemetry"
+import { useTelemetryData, TelemetryData } from "@/hooks/use-telemetry"
 import BoardStatus from "./board-status"
 import LocationMap from "./location-map"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function TelemetryDashboard() {
   const { telemetryData, telemetryHistory } = useTelemetryData()
+
+  // Helper function to calculate change between current and previous value
+  const calculateChange = (currentValue: number | undefined, dataKey: keyof TelemetryData) => {
+    if (currentValue === undefined) return undefined;
+    
+    // Find the previous entry with a defined value
+    const previousEntry = [...telemetryHistory].reverse().find(entry => 
+      entry[dataKey] !== undefined && 
+      entry[dataKey] !== currentValue
+    );
+    
+    if (!previousEntry) return undefined;
+    
+    const previousValue = previousEntry[dataKey] as number;
+    return currentValue - previousValue;
+  };
+
+  // Check if data is stale (older than 5 minutes)
+  const isDataStale = telemetryData && (Date.now() - telemetryData.timestamp > 5 * 60 * 1000);
 
   return (
     <div className="container mx-auto py-6 px-4">
@@ -29,6 +49,16 @@ export default function TelemetryDashboard() {
           </div>
         </div>
 
+        {isDataStale && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Data Stale</AlertTitle>
+            <AlertDescription>
+              No new data has been received for over 5 minutes. Displaying last known values.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <Tabs defaultValue="overview" className="space-y-4">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -44,7 +74,7 @@ export default function TelemetryDashboard() {
                 value={telemetryData?.hvBatteryVoltage}
                 unit="V"
                 icon={<Battery className="h-4 w-4" />}
-                change={1.2}
+                change={calculateChange(telemetryData?.hvBatteryVoltage, "hvBatteryVoltage")}
                 dataKey="hvBatteryVoltage"
               />
               <TelemetryCard
@@ -52,7 +82,7 @@ export default function TelemetryDashboard() {
                 value={telemetryData?.suppBatteryVoltage}
                 unit="V"
                 icon={<Battery className="h-4 w-4" />}
-                change={-0.5}
+                change={calculateChange(telemetryData?.suppBatteryVoltage, "suppBatteryVoltage")}
                 dataKey="suppBatteryVoltage"
               />
               <TelemetryCard
@@ -60,7 +90,7 @@ export default function TelemetryDashboard() {
                 value={telemetryData?.solarPowerIntake}
                 unit="W"
                 icon={<Zap className="h-4 w-4" />}
-                change={50}
+                change={calculateChange(telemetryData?.solarPowerIntake, "solarPowerIntake")}
                 dataKey="solarPowerIntake"
               />
               <TelemetryCard
@@ -68,7 +98,7 @@ export default function TelemetryDashboard() {
                 value={telemetryData?.motorOutputPower}
                 unit="W"
                 icon={<Power className="h-4 w-4" />}
-                change={-30}
+                change={calculateChange(telemetryData?.motorOutputPower, "motorOutputPower")}
                 dataKey="motorOutputPower"
               />
 
@@ -78,7 +108,7 @@ export default function TelemetryDashboard() {
                 value={telemetryData?.avgSpeed}
                 unit="mph"
                 icon={<Gauge className="h-4 w-4" />}
-                change={2.5}
+                change={calculateChange(telemetryData?.avgSpeed, "avgSpeed")}
                 dataKey="avgSpeed"
               />
               <TelemetryCard
@@ -86,7 +116,7 @@ export default function TelemetryDashboard() {
                 value={telemetryData?.netPower}
                 unit="W"
                 icon={<Activity className="h-4 w-4" />}
-                change={20}
+                change={calculateChange(telemetryData?.netPower, "netPower")}
                 dataKey="netPower"
               />
 
@@ -96,7 +126,7 @@ export default function TelemetryDashboard() {
                 value={telemetryData?.lowCellVoltage}
                 unit="V"
                 icon={<Battery className="h-4 w-4" />}
-                change={-0.1}
+                change={calculateChange(telemetryData?.lowCellVoltage, "lowCellVoltage")}
                 dataKey="lowCellVoltage"
               />
               <TelemetryCard
@@ -104,7 +134,7 @@ export default function TelemetryDashboard() {
                 value={telemetryData?.highCellVoltage}
                 unit="V"
                 icon={<Battery className="h-4 w-4" />}
-                change={0.2}
+                change={calculateChange(telemetryData?.highCellVoltage, "highCellVoltage")}
                 dataKey="highCellVoltage"
               />
               <TelemetryCard
@@ -112,7 +142,7 @@ export default function TelemetryDashboard() {
                 value={telemetryData?.lowCellTemp}
                 unit="°C"
                 icon={<Thermometer className="h-4 w-4" />}
-                change={-1.5}
+                change={calculateChange(telemetryData?.lowCellTemp, "lowCellTemp")}
                 dataKey="lowCellTemp"
               />
               <TelemetryCard
@@ -120,7 +150,7 @@ export default function TelemetryDashboard() {
                 value={telemetryData?.highCellTemp}
                 unit="°C"
                 icon={<Thermometer className="h-4 w-4" />}
-                change={2.1}
+                change={calculateChange(telemetryData?.highCellTemp, "highCellTemp")}
                 dataKey="highCellTemp"
               />
             </div>

@@ -76,6 +76,9 @@ export default function TelemetryCard({ title, value, unit, icon, change, dataKe
     }
   }, [])
 
+  // Check if value is undefined
+  const isNoData = value === undefined;
+
   return (
     <Card className="relative" ref={cardRef}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -84,10 +87,10 @@ export default function TelemetryCard({ title, value, unit, icon, change, dataKe
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">
-          {value !== undefined ? value.toFixed(2) : "--"} {unit}
+          {isNoData ? "--" : value.toFixed(2)} {unit}
         </div>
         <div className="flex items-center justify-between mt-1">
-          {change && (
+          {change && !isNoData && (
             <p className="text-xs text-muted-foreground flex items-center">
               {change > 0 ? (
                 <ArrowUp className="mr-1 h-3 w-3 text-green-500" />
@@ -159,17 +162,22 @@ export default function TelemetryCard({ title, value, unit, icon, change, dataKe
                   </tr>
                 </thead>
                 <tbody>
-                  {getMetricHistory().map((entry, index) => (
-                    <tr
-                      key={index}
-                      className="border-t border-gray-100 dark:border-gray-700 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                    >
-                      <td className="py-2 px-3">{entry.timestamp}</td>
-                      <td className="text-right py-2 px-3 font-medium">
-                        {typeof entry.value === "number" ? entry.value.toFixed(2) : entry.value} {unit}
-                      </td>
-                    </tr>
-                  ))}
+                  {getMetricHistory().map((entry, index) => {
+                    const entryValue = entry.value as number;
+                    const isEntryNoData = entryValue === undefined;
+                    
+                    return (
+                      <tr
+                        key={index}
+                        className="border-t border-gray-100 dark:border-gray-700 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                      >
+                        <td className="py-2 px-3">{entry.timestamp}</td>
+                        <td className="text-right py-2 px-3 font-medium">
+                          {isEntryNoData ? "--" : entryValue.toFixed(2)} {unit}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

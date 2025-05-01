@@ -53,19 +53,25 @@ export function useTelemetryData() {
         }
         const data = await response.json();
         
-        // Add timestamp if not present
-        if (!data.timestamp) {
-          data.timestamp = Date.now();
-        }
-        
-        setTelemetryData(data);
-        setLastUpdateTime(Date.now());
-        setIsConnected(true);
-        
-        // Add to history if it's a new entry
-        if (telemetryHistory.length === 0 || 
-            data.timestamp !== telemetryHistory[telemetryHistory.length - 1].timestamp) {
-          setTelemetryHistory(prev => [...prev, data].slice(-10)); // Keep last 10 entries
+        // Only process data if _receivedAt is available
+        if (data._receivedAt) {
+          const timestamp = data._receivedAt;
+          
+          // Create a new data object with the timestamp
+          const telemetryData = {
+            ...data,
+            timestamp
+          };
+          
+          setTelemetryData(telemetryData);
+          setLastUpdateTime(timestamp);
+          setIsConnected(true);
+          
+          // Add to history if it's a new entry
+          if (telemetryHistory.length === 0 || 
+              timestamp !== telemetryHistory[telemetryHistory.length - 1].timestamp) {
+            setTelemetryHistory(prev => [...prev, telemetryData].slice(-10)); // Keep last 10 entries
+          }
         }
       } catch (error) {
         console.error('Error fetching telemetry data:', error);

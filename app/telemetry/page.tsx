@@ -14,7 +14,7 @@ export default function TelemetryDisplay() {
 
   return (
     <div>
-      <h2>Live Telemetry</h2>
+      <h2>Live Telemetry Data</h2>
       <pre>{JSON.stringify(data, null, 2)}</pre>
     </div>
   );

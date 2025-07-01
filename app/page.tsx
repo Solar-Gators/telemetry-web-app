@@ -1,10 +1,5 @@
-import TelemetryDashboard from "@/components/telemetry-dashboard";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <TelemetryDashboard />
-    </main>
-  );
+  redirect("/telemetry/overview");
 }
-// test

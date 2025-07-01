@@ -1,14 +1,14 @@
-"use client"
+"use client";
 
-import { MapPin, Navigation, Compass } from "lucide-react"
-import { useState, useEffect } from "react"
+import { MapPin, Navigation, Compass } from "lucide-react";
+import { useState, useEffect } from "react";
 
 interface LocationData {
-  latitude: number
-  longitude: number
-  heading: number
-  accuracy: number
-  timestamp: number
+  latitude: number;
+  longitude: number;
+  heading: number;
+  accuracy: number;
+  timestamp: number;
 }
 
 export default function LocationMap() {
@@ -18,7 +18,7 @@ export default function LocationMap() {
     heading: 45,
     accuracy: 8.5,
     timestamp: Date.now(),
-  })
+  });
 
   // Update location data every 5 seconds with simulated movement
   useEffect(() => {
@@ -29,11 +29,11 @@ export default function LocationMap() {
         heading: (prev.heading + (Math.random() - 0.5) * 20) % 360,
         accuracy: 5 + Math.random() * 10,
         timestamp: Date.now(),
-      }))
-    }, 5000)
+      }));
+    }, 5000);
 
-    return () => clearInterval(interval)
-  }, [])
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="flex flex-col h-full">
@@ -86,7 +86,9 @@ export default function LocationMap() {
         <div className="absolute top-2 left-2 bg-white/80 dark:bg-black/80 px-2 py-1 text-xs rounded">
           University of Florida
         </div>
-        <div className="absolute bottom-2 right-2 bg-white/80 dark:bg-black/80 px-2 py-1 text-xs rounded">Zoom: 15</div>
+        <div className="absolute bottom-2 right-2 bg-white/80 dark:bg-black/80 px-2 py-1 text-xs rounded">
+          Zoom: 15
+        </div>
       </div>
 
       {/* Location info */}
@@ -94,23 +96,27 @@ export default function LocationMap() {
         <div className="flex items-center">
           <MapPin className="h-3 w-3 mr-1 text-muted-foreground" />
           <span className="font-medium mr-1">Coordinates:</span>
-          {locationData.latitude.toFixed(6)}, {locationData.longitude.toFixed(6)}
+          {locationData.latitude.toFixed(6)},{" "}
+          {locationData.longitude.toFixed(6)}
         </div>
         <div className="flex items-center">
           <Compass className="h-3 w-3 mr-1 text-muted-foreground" />
           <span className="font-medium mr-1">Heading:</span>
-          <Navigation className="h-3 w-3 mr-1" style={{ transform: `rotate(${locationData.heading}deg)` }} />
-          {locationData.heading.toFixed(1)}° ({getCardinalDirection(locationData.heading)})
+          <Navigation
+            className="h-3 w-3 mr-1"
+            style={{ transform: `rotate(${locationData.heading}deg)` }}
+          />
+          {locationData.heading.toFixed(1)}° (
+          {getCardinalDirection(locationData.heading)})
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 // Helper function to convert heading in degrees to cardinal direction
 function getCardinalDirection(heading: number): string {
-  const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
-  const index = Math.round(heading / 45) % 8
-  return directions[index]
+  const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+  const index = Math.round(heading / 45) % 8;
+  return directions[index];
 }
-

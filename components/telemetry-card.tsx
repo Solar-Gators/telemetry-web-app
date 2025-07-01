@@ -1,32 +1,42 @@
-"use client"
+"use client";
 
-import { useState, useRef, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowDown, ArrowUp, History, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { useTelemetryData } from "@/hooks/use-telemetry"
-import type { ReactNode } from "react"
+import { useState, useRef, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowDown, ArrowUp, History, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useTelemetryData } from "@/hooks/use-telemetry";
+import type { ReactNode } from "react";
 
 interface TelemetryCardProps {
-  title: string
-  value: number | undefined
-  unit: string
-  icon: ReactNode
-  change?: number
-  dataKey?: string
+  title: string;
+  value: number | undefined;
+  unit: string;
+  icon: ReactNode;
+  change?: number;
+  dataKey?: string;
 }
 
-export default function TelemetryCard({ title, value, unit, icon, change, dataKey }: TelemetryCardProps) {
-  const { telemetryHistory } = useTelemetryData()
-  const [showHistory, setShowHistory] = useState(false)
-  const popupRef = useRef<HTMLDivElement>(null)
-  const buttonRef = useRef<HTMLButtonElement>(null)
-  const cardRef = useRef<HTMLDivElement>(null)
-  const [popupPosition, setPopupPosition] = useState<{ top?: boolean; left?: boolean }>({})
+export default function TelemetryCard({
+  title,
+  value,
+  unit,
+  icon,
+  change,
+  dataKey,
+}: TelemetryCardProps) {
+  const { telemetryHistory } = useTelemetryData();
+  const [showHistory, setShowHistory] = useState(false);
+  const popupRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [popupPosition, setPopupPosition] = useState<{
+    top?: boolean;
+    left?: boolean;
+  }>({});
 
   // Get the relevant data for this metric
   const getMetricHistory = () => {
-    if (!dataKey) return []
+    if (!dataKey) return [];
 
     return telemetryHistory
       .slice(-10) // Get last 10 entries
@@ -34,28 +44,28 @@ export default function TelemetryCard({ title, value, unit, icon, change, dataKe
         timestamp: new Date(entry.timestamp).toLocaleTimeString(),
         value: entry[dataKey as keyof typeof entry],
       }))
-      .reverse() // Show newest first
-  }
+      .reverse(); // Show newest first
+  };
 
   // Determine popup position based on card position
   useEffect(() => {
     if (showHistory && cardRef.current) {
-      const rect = cardRef.current.getBoundingClientRect()
-      const windowHeight = window.innerHeight
-      const windowWidth = window.innerWidth
+      const rect = cardRef.current.getBoundingClientRect();
+      const windowHeight = window.innerHeight;
+      const windowWidth = window.innerWidth;
 
       // Check if card is in the bottom half of the screen
-      const isBottom = rect.bottom > windowHeight - 200
+      const isBottom = rect.bottom > windowHeight - 200;
 
       // Check if card is in the right half of the screen
-      const isRight = rect.right > windowWidth - 200
+      const isRight = rect.right > windowWidth - 200;
 
       setPopupPosition({
         top: isBottom, // If true, popup goes up
         left: isRight, // If true, popup goes left
-      })
+      });
     }
-  }, [showHistory])
+  }, [showHistory]);
 
   // Close popup when clicking outside
   useEffect(() => {
@@ -66,15 +76,15 @@ export default function TelemetryCard({ title, value, unit, icon, change, dataKe
         buttonRef.current &&
         !buttonRef.current.contains(event.target as Node)
       ) {
-        setShowHistory(false)
+        setShowHistory(false);
       }
-    }
+    };
 
-    document.addEventListener("mousedown", handleClickOutside)
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [])
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   // Check if value is undefined
   const isNoData = value === undefined;
@@ -138,8 +148,14 @@ export default function TelemetryCard({ title, value, unit, icon, change, dataKe
           >
             <style jsx global>{`
               @keyframes fadeIn {
-                from { opacity: 0; transform: scale(0.95); }
-                to { opacity: 1; transform: scale(1); }
+                from {
+                  opacity: 0;
+                  transform: scale(0.95);
+                }
+                to {
+                  opacity: 1;
+                  transform: scale(1);
+                }
               }
             `}</style>
             <div className="flex items-center justify-between p-3 border-b border-gray-100 dark:border-gray-700">
@@ -157,15 +173,19 @@ export default function TelemetryCard({ title, value, unit, icon, change, dataKe
               <table className="w-full text-xs">
                 <thead className="sticky top-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm">
                   <tr>
-                    <th className="text-left py-2 px-3 font-medium text-gray-500 dark:text-gray-400">Time</th>
-                    <th className="text-right py-2 px-3 font-medium text-gray-500 dark:text-gray-400">Value</th>
+                    <th className="text-left py-2 px-3 font-medium text-gray-500 dark:text-gray-400">
+                      Time
+                    </th>
+                    <th className="text-right py-2 px-3 font-medium text-gray-500 dark:text-gray-400">
+                      Value
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {getMetricHistory().map((entry, index) => {
                     const entryValue = entry.value as number;
                     const isEntryNoData = entryValue === undefined;
-                    
+
                     return (
                       <tr
                         key={index}
@@ -185,6 +205,5 @@ export default function TelemetryCard({ title, value, unit, icon, change, dataKe
         )}
       </CardContent>
     </Card>
-  )
+  );
 }
-

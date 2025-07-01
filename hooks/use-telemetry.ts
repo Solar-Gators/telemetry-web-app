@@ -1,22 +1,22 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
+import { useEffect, useState } from "react";
 
 // Define the telemetry data interface
 export interface TelemetryData {
-  timestamp: number
-  hvBatteryVoltage?: number
-  suppBatteryVoltage?: number
-  solarPowerIntake?: number
-  motorOutputPower?: number
-  motorCurrent?: number
-  avgSpeed?: number
-  netPower?: number
-  lowCellVoltage?: number
-  highCellVoltage?: number
-  lowCellTemp?: number
-  highCellTemp?: number
-  [key: string]: any
+  timestamp: number;
+  hvBatteryVoltage?: number;
+  suppBatteryVoltage?: number;
+  solarPowerIntake?: number;
+  motorOutputPower?: number;
+  motorCurrent?: number;
+  avgSpeed?: number;
+  netPower?: number;
+  lowCellVoltage?: number;
+  highCellVoltage?: number;
+  lowCellTemp?: number;
+  highCellTemp?: number;
+  [key: string]: any;
 }
 
 // Timeout duration in milliseconds (8 seconds)
@@ -24,10 +24,12 @@ const DATA_TIMEOUT = 8 * 1000;
 
 // Custom hook for telemetry data
 export function useTelemetryData() {
-  const [telemetryData, setTelemetryData] = useState<TelemetryData | null>(null)
-  const [telemetryHistory, setTelemetryHistory] = useState<TelemetryData[]>([])
-  const [isConnected, setIsConnected] = useState<boolean>(false)
-  const [lastUpdateTime, setLastUpdateTime] = useState<number>(Date.now())
+  const [telemetryData, setTelemetryData] = useState<TelemetryData | null>(
+    null,
+  );
+  const [telemetryHistory, setTelemetryHistory] = useState<TelemetryData[]>([]);
+  const [isConnected, setIsConnected] = useState<boolean>(false);
+  const [lastUpdateTime, setLastUpdateTime] = useState<number>(Date.now());
 
   useEffect(() => {
     // Check connection status every 30 seconds
@@ -47,34 +49,37 @@ export function useTelemetryData() {
     // Function to fetch telemetry data
     const fetchTelemetryData = async () => {
       try {
-        const response = await fetch('/api/live-data');
+        const response = await fetch("/api/live-data");
         if (!response.ok) {
-          throw new Error('Failed to fetch telemetry data');
+          throw new Error("Failed to fetch telemetry data");
         }
         const data = await response.json();
-        
+
         // Only process data if _receivedAt is available
         if (data._receivedAt) {
           const timestamp = data._receivedAt;
-          
+
           // Create a new data object with the timestamp
           const telemetryData = {
             ...data,
-            timestamp
+            timestamp,
           };
-          
+
           setTelemetryData(telemetryData);
           setLastUpdateTime(timestamp);
           setIsConnected(true);
-          
+
           // Add to history if it's a new entry
-          if (telemetryHistory.length === 0 || 
-              timestamp !== telemetryHistory[telemetryHistory.length - 1].timestamp) {
-            setTelemetryHistory(prev => [...prev, telemetryData].slice(-10)); // Keep last 10 entries
+          if (
+            telemetryHistory.length === 0 ||
+            timestamp !==
+              telemetryHistory[telemetryHistory.length - 1].timestamp
+          ) {
+            setTelemetryHistory((prev) => [...prev, telemetryData].slice(-10)); // Keep last 10 entries
           }
         }
       } catch (error) {
-        console.error('Error fetching telemetry data:', error);
+        console.error("Error fetching telemetry data:", error);
         setIsConnected(false);
       }
     };
@@ -91,6 +96,5 @@ export function useTelemetryData() {
     };
   }, [telemetryHistory]);
 
-  return { telemetryData, telemetryHistory, isConnected }
+  return { telemetryData, telemetryHistory, isConnected };
 }
-
